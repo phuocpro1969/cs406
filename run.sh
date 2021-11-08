@@ -1,4 +1,4 @@
 #!bin/bash
 
 source venv/bin/activate
-python api.py
+python server/api.py
