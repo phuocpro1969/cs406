@@ -71,8 +71,8 @@ def upload_file():
         # step 2: detect text
 
         # Text box các thông tin
-        boxes=result.copy()
         image = cv2.cvtColor(result,cv2.COLOR_GRAY2RGB)
+        boxes=image.copy()
         d = pytesseract.image_to_data(boxes, output_type= pytesseract.Output.DICT)
         n_boxes = len(d['level'])
 
