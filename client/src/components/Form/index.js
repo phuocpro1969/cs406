@@ -1,41 +1,22 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import axios from "axios";
 import { ErrorMessage } from "@hookform/error-message";
+import { useDispatch } from "react-redux";
 import "./index.css";
+import { predict } from "../../redux/actions/resultAction";
+
 function Form() {
+	const dispatch = useDispatch();
+
 	const {
 		register,
 		handleSubmit,
 		formState: { errors },
 	} = useForm();
 
-	const formData = new FormData();
-
 	const onSubmit = (data) => {
 		if (data.files) {
-			formData.append("files", data.files[0]);
-
-			axios
-				.post("http://localhost:5000/uploader", formData, {
-					headers: {
-						"Access-Control-Allow-Origin": "*",
-						"content-type": "multipart/form-data",
-					},
-				})
-				.then((res) => {
-					const html_boxes = res.data.names.reduce(
-						(html, name) =>
-							html +
-							`<img src="http://localhost:5000/displays/${name}">`,
-						""
-					);
-
-					document.getElementById("result").innerHTML = html_boxes;
-				})
-				.catch((err) => {
-					console.log(err);
-				});
+			dispatch(predict(data));
 		}
 		return 0;
 	};
