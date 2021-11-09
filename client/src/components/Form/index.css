@@ -1,0 +1,5 @@
+.button__configure {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
