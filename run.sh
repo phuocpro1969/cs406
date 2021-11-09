@@ -1,6 +1,26 @@
 #!/bin/bash
 
-source venv/bin/activate
-python server/api.py
+case $1 in
+    be)
+        cd server
+        source venv/bin/activate
+        python api.py
+    ;;
 
-cd client && npm start
+    fe)
+        cd client
+        npm start
+    ;;
+
+    push)
+        if [ -z "$2" ]; then
+            commit="update code"
+            else
+            commit=$2
+        fi
+
+        git add .
+        git commit -m "$commit"
+        git push
+    ;;
+esac
