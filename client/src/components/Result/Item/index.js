@@ -1,20 +1,18 @@
 import React from "react";
 
 export default function Item(props) {
-	console.log(props);
-	console.log(`http://localhost:5000/uploads/${props.name}`);
 	return (
 		<>
 			<div className="left">
 				{
 					<img
-						key={props.i}
-						alt={props.name}
-						src={`http://localhost:5000/uploads/${props.name}`}
+						key={props.data.i}
+						alt={props.data.name}
+						src={`http://localhost:5000/displays/${props.data.name}`}
 					/>
 				}
 			</div>
-			<div className="right">{props.text}</div>
+			<div className="right">{props.data.text}</div>
 		</>
 	);
 }

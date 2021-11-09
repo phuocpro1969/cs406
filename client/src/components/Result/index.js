@@ -8,29 +8,24 @@ export default function Result() {
 
 	useEffect(() => {
 		let arr = [];
-		if (data.names && data.names.length > 0) {
-			for (let i of data.names) {
-				console.log(i);
-				arr.append({
+		if (data && data.data.names) {
+			for (let i in data.data.names) {
+				arr.push({
 					i: i,
-					name: data.names[i],
-					text: data.texts[i],
+					name: data.data.names[i],
+					text: data.data.texts[i],
 				});
 			}
 		}
 
-		console.log(arr);
-
 		setProps(arr);
 	}, [data]);
-
-	console.log(props);
 
 	return (
 		<>
 			<div>
 				<h1> RESULT </h1>
-				{props && props?.map((prop) => <Item props={prop} />)}
+				{props && props?.map((prop) => <Item data={prop} />)}
 			</div>
 		</>
 	);
