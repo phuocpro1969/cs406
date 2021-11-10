@@ -86,6 +86,7 @@ def wrap_perspective(img, rect):
 
 
 def bw_scanner(image):
+    image = cv2.cvtColor(image,  cv2.COLOR_BGR2GRAY)
     T = threshold_local(image, 21, offset=5, method="gaussian")
     return (image > T).astype("uint8") * 255
 
@@ -133,7 +134,7 @@ def main():
     result = bw_scanner(scanned)
 
     output = Image.fromarray(result)
-    output.save('step1.png')
+    output.save('results/step1.jpg')
 
 
 if __name__ == '__main__':

@@ -13,7 +13,7 @@ def find_amounts(text):
 
 
 if __name__ == '__main__':
-    file_name = "result.png"
+    file_name = "results/step1.jpg"
     image = cv2.imread(file_name, cv2.IMREAD_GRAYSCALE)
 
     # Bước 1: Text box các thông tin
@@ -38,5 +38,5 @@ if __name__ == '__main__':
 
     amounts = find_amounts(extracted_text)
     print(amounts)
-
-    print(max(amounts))
+    if len(amounts) > 0:
+        print(max(amounts))

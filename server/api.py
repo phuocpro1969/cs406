@@ -16,7 +16,7 @@ RESULT_DIR = os.path.join(os.getcwd(), "results")
 
 @app.route('/uploader', methods=['POST'])
 def upload_file():
-    data = {'names': [], 'texts': []}
+    data = {'names': [], 'texts': [], 'steps': []}
     if request.method == 'POST':
 
         id = str(uuid.uuid1())
@@ -26,8 +26,13 @@ def upload_file():
         # convert string data to numpy array
         np_img = np.fromstring(f.read(), np.uint8)
         # convert numpy array to image
-        image = cv2.imdecode(np_img, cv2.IMREAD_GRAYSCALE)
+        image = cv2.imdecode(np_img, cv2.IMREAD_UNCHANGED)
 
+        name = "input-" + id +".jpg"
+        data['names'].append(name)
+        data['texts'].append("")
+        data['steps'].append("Step 0: Input image")
+        cv2.imwrite(os.path.join(RESULT_DIR, name), image)
 
         # Step 1: process image
 
@@ -36,8 +41,11 @@ def upload_file():
         original = image.copy()
         image = opencv_resize(image, resize_ratio)
 
+        # Chuyển ảnh sang Grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
         # Dùng GaussianBlur 5x5 để giảm nhiễu
-        blurred = cv2.GaussianBlur(image, (5, 5), 0)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
         # Nhận diện các vùng trắng
         rectKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))
@@ -63,42 +71,51 @@ def upload_file():
 
         result = bw_scanner(scanned)
 
-        name = "receipt-" + id +".jpg"
-        data['names'].append(name)
-        data['texts'].append("")
-        cv2.imwrite(os.path.join(RESULT_DIR, name), result)
+        if len(result) > 0:
+            name = "receipt-" + id +".jpg"
+            data['names'].append(name)
+            data['texts'].append("")
+            data['steps'].append("Step 1: Detect receipt")
+            cv2.imwrite(os.path.join(RESULT_DIR, name), result)
 
-        # step 2: detect text
+            # step 2: detect text
 
-        # Text box các thông tin
-        image = cv2.cvtColor(result,cv2.COLOR_GRAY2RGB)
-        boxes=image.copy()
-        d = pytesseract.image_to_data(boxes, output_type= pytesseract.Output.DICT)
-        n_boxes = len(d['level'])
+            # Text box các thông tin
+            image=result
+            boxes = cv2.cvtColor(result.copy(),cv2.COLOR_GRAY2RGB)
+            d = pytesseract.image_to_data(boxes, output_type= pytesseract.Output.DICT)
+            n_boxes = len(d['level'])
 
-        for i in range(n_boxes):
-            (x, y, w, h) = (
-                d['left'][i],
-                d['top'][i],
-                d['width'][i],
-                d['height'][i]
-            )
-            boxes = cv2.rectangle(
-                boxes,
-                (x, y),
-                (x + w, y + h),
-                (0, 255, 0),
-                2
-            )
+            for i in range(n_boxes):
+                (x, y, w, h) = (
+                    d['left'][i],
+                    d['top'][i],
+                    d['width'][i],
+                    d['height'][i]
+                )
+                boxes = cv2.rectangle(
+                    boxes,
+                    (x, y),
+                    (x + w, y + h),
+                    (0, 255, 0),
+                    2
+                )
 
-        name = "boxes-" + id + ".jpg"
-        data['names'].append(name)
-        cv2.imwrite(os.path.join(RESULT_DIR, name), boxes)
+            name = "boxes-" + id + ".jpg"
+            data['names'].append(name)
+            data['steps'].append("Step 2: Detect box && text")
+            cv2.imwrite(os.path.join(RESULT_DIR, name), boxes)
 
-        # Nhận dạng thông tin
-        extracted_text = pytesseract.image_to_string(image)
-        print(extracted_text)
-        data['texts'].append(extracted_text)
+            # Nhận dạng thông tin
+            extracted_text = pytesseract.image_to_string(image)
+            amounts = find_amounts(extracted_text)
+            print(amounts)
+            data['texts'].append(repr(extracted_text).replace("\\n", "<br/>").replace("'", "").replace("\\x0c", ""))
+
+            if len(amounts) > 0:
+                data['names'].append("")
+                data['steps'].append("Step 3: Calculate amount of bill")
+                data['texts'].append("<h1>total: "+str(max(amounts)) + "</h1>")
 
         return json.dumps(data, indent=4)
 
