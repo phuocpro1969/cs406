@@ -65,18 +65,15 @@ def upload_file():
         get_receipt_contour(largest_contours)
 
         receipt_contour = get_receipt_contour(largest_contours)
+        try:
+            scanned = wrap_perspective(
+                original.copy(), contour_to_rect(receipt_contour, resize_ratio))
 
-        scanned = wrap_perspective(
-            original.copy(), contour_to_rect(receipt_contour, resize_ratio))
-
-        result = bw_scanner(scanned)
+            result = bw_scanner(scanned)
+        except:
+            result = []
 
         if len(result) > 0:
-            name = "receipt-" + id +".jpg"
-            data['names'].append(name)
-            data['texts'].append("")
-            data['steps'].append("Step 1: Detect receipt")
-            cv2.imwrite(os.path.join(RESULT_DIR, name), result)
 
             # step 2: detect text
 
@@ -101,20 +98,93 @@ def upload_file():
                     2
                 )
 
-            name = "boxes-" + id + ".jpg"
-            data['names'].append(name)
-            data['steps'].append("Step 2: Detect box && text")
-            cv2.imwrite(os.path.join(RESULT_DIR, name), boxes)
-
             # Nhận dạng thông tin
             extracted_text = pytesseract.image_to_string(image)
             amounts = find_amounts(extracted_text)
             print(amounts)
-            data['texts'].append(repr(extracted_text).replace("\\n", "<br/>").replace("'", "").replace("\\x0c", ""))
-
             if len(amounts) > 0:
+                name = "receipt-" + id +".jpg"
+                data['names'].append(name)
+                data['texts'].append("")
+                data['steps'].append("Step 1: Detect receipt")
+                cv2.imwrite(os.path.join(RESULT_DIR, name), result)
+                name = "boxes-" + id + ".jpg"
+                data['names'].append(name)
+                data['steps'].append("Step 2: Detect box && text")
+                data['texts'].append(repr(extracted_text).replace("\\n", "<br/>").replace("'", "").replace("\\x0c", ""))
+                cv2.imwrite(os.path.join(RESULT_DIR, name), boxes)
+
                 data['names'].append("")
                 data['steps'].append("Step 3: Calculate amount of bill")
+                data['texts'].append("<h1>total: "+str(max(amounts)) + "</h1>")
+
+            else:
+                image=original.copy()
+                boxes=original.copy()
+                d = pytesseract.image_to_data(boxes, output_type= pytesseract.Output.DICT)
+                n_boxes = len(d['level'])
+
+                for i in range(n_boxes):
+                    (x, y, w, h) = (
+                        d['left'][i],
+                        d['top'][i],
+                        d['width'][i],
+                        d['height'][i]
+                    )
+                    boxes = cv2.rectangle(
+                        boxes,
+                        (x, y),
+                        (x + w, y + h),
+                        (0, 255, 0),
+                        2
+                    )
+
+                extracted_text = pytesseract.image_to_string(original.copy())
+                amounts = find_amounts(extracted_text)
+                print(amounts)
+                if len(amounts) > 0:
+                    name = "boxes-" + id + ".jpg"
+                    data['names'].append(name)
+                    data['steps'].append("Step 1: Detect box && text")
+                    data['texts'].append(repr(extracted_text).replace("\\n", "<br/>").replace("'", "").replace("\\x0c", ""))
+                    cv2.imwrite(os.path.join(RESULT_DIR, name), boxes)
+
+                    data['names'].append("")
+                    data['steps'].append("Step 2: Calculate amount of bill")
+                    data['texts'].append("<h1>total: "+str(max(amounts)) + "</h1>")
+        else:
+            image=original.copy()
+            boxes=original.copy()
+            d = pytesseract.image_to_data(boxes, output_type= pytesseract.Output.DICT)
+            n_boxes = len(d['level'])
+
+            for i in range(n_boxes):
+                (x, y, w, h) = (
+                    d['left'][i],
+                    d['top'][i],
+                    d['width'][i],
+                    d['height'][i]
+                )
+                boxes = cv2.rectangle(
+                    boxes,
+                    (x, y),
+                    (x + w, y + h),
+                    (0, 255, 0),
+                    2
+                )
+
+            extracted_text = pytesseract.image_to_string(original.copy())
+            amounts = find_amounts(extracted_text)
+            print(amounts)
+            if len(amounts) > 0:
+                name = "boxes-" + id + ".jpg"
+                data['names'].append(name)
+                data['steps'].append("Step 1: Detect box && text")
+                data['texts'].append(repr(extracted_text).replace("\\n", "<br/>").replace("'", "").replace("\\x0c", ""))
+                cv2.imwrite(os.path.join(RESULT_DIR, name), boxes)
+
+                data['names'].append("")
+                data['steps'].append("Step 2: Calculate amount of bill")
                 data['texts'].append("<h1>total: "+str(max(amounts)) + "</h1>")
 
         return json.dumps(data, indent=4)
